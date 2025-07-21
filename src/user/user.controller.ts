@@ -1,9 +1,12 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, UsePipes, ValidationPipe, Put } from '@nestjs/common';
 import { UserService } from './user.service';
-import { User } from './user.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UserResponseDto } from './dto/user-response.dto';
+import * as bcrypt from 'bcrypt';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin')
@@ -12,22 +15,46 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  create(@Body() userData: Partial<User>) {
-    return this.userService.create(userData);
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async create(@Body() userData: CreateUserDto): Promise<UserResponseDto> {
+    const hashed = await bcrypt.hash(userData.password, 10);
+    const user = await this.userService.create({ ...userData, password: hashed });
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...rest } = user;
+    return rest;
   }
 
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  async findAll(): Promise<UserResponseDto[]> {
+    const users = await this.userService.findAll();
+    return users.map(({ password, ...rest }) => rest);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(Number(id));
+  async findOne(@Param('id') id: string): Promise<UserResponseDto | undefined> {
+    const user = await this.userService.findOne(Number(id));
+    if (!user) return undefined;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...rest } = user;
+    return rest;
+  }
+
+  @Put(':id')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async update(@Param('id') id: string, @Body() userData: UpdateUserDto): Promise<UserResponseDto | undefined> {
+    if (userData.password) {
+      userData.password = await bcrypt.hash(userData.password, 10);
+    }
+    await this.userService.update(Number(id), userData);
+    const user = await this.userService.findOne(Number(id));
+    if (!user) return undefined;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...rest } = user;
+    return rest;
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     return this.userService.remove(Number(id));
   }
 }

@@ -30,4 +30,8 @@ export class UserService {
   remove(id: number) {
     return this.userRepository.delete(id);
   }
+
+  update(id: number, userData: Partial<User>) {
+    return this.userRepository.update(id, userData);
+  }
 }
