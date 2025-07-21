@@ -23,4 +23,13 @@
 
 ---
 
+## ✅ Étape 3 : Module utilisateur avec CRUD
 
+- Génération du module, service et controller : `nest g module user` etc.
+- Configuration du module avec `TypeOrmModule.forFeature`
+- Implémentation des méthodes dans le service :
+  - `create`, `findAll`, `findOne`, `remove`
+- Création des routes HTTP dans le contrôleur
+- Test des routes avec Postman
+
+---
