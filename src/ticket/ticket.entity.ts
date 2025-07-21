@@ -1,9 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 import { STATUS } from './ticket.enum';
+import { User } from '../user/user.entity';
 
 @Entity()
 export class Ticket {
-
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -16,11 +16,11 @@ export class Ticket {
     @Column({ default: STATUS.OPEN })
     status: STATUS;
 
-    @Column({ nullable: true })
-    createdBy: number;
+    @ManyToOne(() => User, { nullable: false })
+    createdBy: User;
 
-    @Column({ nullable: true })
-    assignedTo: number;
+    @ManyToOne(() => User, { nullable: true })
+    assignedTo: User;
 
     @CreateDateColumn()
     createdAt: Date;

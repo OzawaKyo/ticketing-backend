@@ -11,16 +11,16 @@ export class TicketService {
     ) {}
 
     create(ticketData: Partial<Ticket>) {
-        const ticket = this.ticketRepository.create(ticketData);
-        return this.ticketRepository.save(ticket);
+        // ticketData.createdBy et ticketData.assignedTo doivent être des objets User ou des ids
+        return this.ticketRepository.save(ticketData);
     }
 
     findAll() {
-        return this.ticketRepository.find();
+        return this.ticketRepository.find({ relations: ['createdBy', 'assignedTo'] });
     }
 
     findOne(id: number) {
-        return this.ticketRepository.findOne({ where: { id } });
+        return this.ticketRepository.findOne({ where: { id }, relations: ['createdBy', 'assignedTo'] });
     }
 
     update(id: number, ticketData: Partial<Ticket>) {
@@ -32,6 +32,6 @@ export class TicketService {
     }
 
     findByUser(userId: number) {
-        return this.ticketRepository.find({ where: { createdBy: userId } });
+        return this.ticketRepository.find({ where: { createdBy: { id: userId } }, relations: ['createdBy', 'assignedTo'] });
     }
 }

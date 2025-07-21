@@ -1,20 +1,37 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Put, Request, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Put, Request, ForbiddenException, UsePipes, ValidationPipe } from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { Ticket } from './ticket.entity';
+import { CreateTicketDto } from './dto/create-ticket.dto';
+import { UpdateTicketDto } from './dto/update-ticket.dto';
+import { UserService } from '../user/user.service';
+import { User } from '../user/user.entity';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('tickets')
 export class TicketController {
-    constructor(private readonly ticketService: TicketService) {}
+    constructor(
+        private readonly ticketService: TicketService,
+        private readonly userService: UserService,
+    ) {}
 
     @Post()
     @Roles('admin', 'user')
-    create(@Body() ticketData: Partial<Ticket>, @Request() req) {
-        // Associer le ticket à l'utilisateur connecté
-        return this.ticketService.create({ ...ticketData, createdBy: req.user.id });
+    @UsePipes(new ValidationPipe({ whitelist: true }))
+    async create(@Body() createTicketDto: CreateTicketDto, @Request() req) {
+        const user = await this.userService.findOne(req.user.id);
+        if (!user) throw new ForbiddenException('Utilisateur non trouvé');
+        let assignedToUser: User | undefined = undefined;
+        if (createTicketDto.assignedTo) {
+            assignedToUser = await this.userService.findOne(createTicketDto.assignedTo) || undefined;
+        }
+        return this.ticketService.create({
+            ...createTicketDto,
+            createdBy: user,
+            assignedTo: assignedToUser,
+        });
     }
 
     @Get()
@@ -40,13 +57,21 @@ export class TicketController {
 
     @Put(':id')
     @Roles('admin', 'user')
-    async update(@Param('id') id: string, @Body() ticketData: Partial<Ticket>, @Request() req) {
+    @UsePipes(new ValidationPipe({ whitelist: true }))
+    async update(@Param('id') id: string, @Body() updateTicketDto: UpdateTicketDto, @Request() req) {
         const ticket = await this.ticketService.findOne(Number(id));
         if (!ticket) throw new ForbiddenException('Ticket non trouvé');
-        if (req.user.role !== 'admin' && ticket.createdBy !== req.user.id) {
+        if (req.user.role !== 'admin' && ticket.createdBy.id !== req.user.id) {
             throw new ForbiddenException('Vous ne pouvez modifier que vos propres tickets.');
         }
-        return this.ticketService.update(Number(id), ticketData);
+        let assignedToUser: User | undefined = ticket.assignedTo;
+        if (updateTicketDto.assignedTo) {
+            assignedToUser = await this.userService.findOne(updateTicketDto.assignedTo) || undefined;
+        }
+        return this.ticketService.update(Number(id), {
+            ...updateTicketDto,
+            assignedTo: assignedToUser,
+        });
     }
 
     @Delete(':id')
