@@ -47,3 +47,22 @@
 
 ---
 
+## ✅ Étape 5 : Sécurisation des routes utilisateurs (admin uniquement)
+
+- Création d'un guard `JwtAuthGuard` pour exiger un JWT valide sur les routes sensibles.
+- Création d'un décorateur `@Roles('admin')` et d'un guard `RolesGuard` pour restreindre l'accès aux routes selon le rôle de l'utilisateur.
+- Application de ces guards sur le contrôleur utilisateur :
+  - Toutes les routes `/users` sont désormais accessibles **uniquement** aux utilisateurs ayant le rôle `admin`.
+  - Un utilisateur non admin recevra une erreur 403 Forbidden.
+- Exemple d'utilisation dans le contrôleur :
+
+```ts
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
+@Controller('users')
+export class UserController { ... }
+```
+
+- Le rôle de l'utilisateur est stocké dans la propriété `role` de l'entité `User` et inclus dans le JWT lors de la connexion.
+- Pour tester, assurez-vous d'avoir au moins un utilisateur avec `role: 'admin'` dans la base de données.
+
