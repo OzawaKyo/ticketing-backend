@@ -33,3 +33,17 @@
 - Test des routes avec Postman
 
 ---
+
+## ✅ Étape 4 : Authentification (signup / login)
+
+- Installation de `bcrypt`, `jwt`, `passport`, etc.
+- Création du module `auth`
+- Ajout de la stratégie `JwtStrategy`
+- AuthService :
+  - `signup()` avec hash bcrypt
+  - `login()` avec vérification et JWT
+- AuthController avec routes `/auth/signup` et `/auth/login`
+- Ajout d’un token JWT avec `access_token`
+
+---
+
