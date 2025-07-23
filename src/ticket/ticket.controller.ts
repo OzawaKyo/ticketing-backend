@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Put, Request, ForbiddenException, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Put, Request, ForbiddenException, UsePipes, ValidationPipe, Query } from '@nestjs/common';
 import { TicketService } from './ticket.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -8,6 +8,7 @@ import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto } from './dto/update-ticket.dto';
 import { UserService } from '../user/user.service';
 import { User } from '../user/user.entity';
+import { STATUS } from './ticket.enum';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('tickets')
@@ -36,12 +37,24 @@ export class TicketController {
 
     @Get()
     @Roles('admin', 'user')
-    findAll(@Request() req) {
-        if (req.user.role === 'admin') {
-            return this.ticketService.findAll();
-        } else {
-            return this.ticketService.findByUser(req.user.id);
-        }
+    findAll(
+        @Request() req,
+        @Query('search') search?: string,
+        @Query('status') status?: string,
+        @Query('assignedTo') assignedTo?: string,
+        @Query('createdAfter') createdAfter?: string,
+        @Query('createdBefore') createdBefore?: string,
+    ) {
+        const isAdmin = req.user.role === 'admin';
+        return this.ticketService.searchAndFilter({
+            search,
+            status: status as STATUS,
+            assignedTo: assignedTo ? Number(assignedTo) : undefined,
+            createdAfter,
+            createdBefore,
+            userId: req.user.id,
+            isAdmin,
+        });
     }
 
     @Get(':id')
