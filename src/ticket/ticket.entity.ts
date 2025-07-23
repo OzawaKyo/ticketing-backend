@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany } from 'typeorm';
 import { STATUS } from './ticket.enum';
 import { User } from '../user/user.entity';
+import { Comment } from '../comment/comment.entity';
 
 @Entity()
 export class Ticket {
@@ -27,4 +28,7 @@ export class Ticket {
 
     @UpdateDateColumn()
     updatedAt: Date;
+
+    @OneToMany(() => Comment, comment => comment.ticket)
+    comments: Comment[];
 }

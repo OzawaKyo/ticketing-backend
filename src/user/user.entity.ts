@@ -4,7 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
+
+import { Comment } from '../comment/comment.entity';
 
 @Entity()
 export class User {
@@ -20,6 +24,7 @@ export class User {
   @Column({ unique: true })
   email: string;
 
+  @Exclude()
   @Column()
   password: string;
 
@@ -31,4 +36,8 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => Comment, comment => comment.user)
+  comments: Comment[];
+
 }

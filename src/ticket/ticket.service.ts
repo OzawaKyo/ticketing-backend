@@ -16,11 +16,11 @@ export class TicketService {
     }
 
     findAll() {
-        return this.ticketRepository.find({ relations: ['createdBy', 'assignedTo'] });
+        return this.ticketRepository.find({ relations: ['createdBy', 'assignedTo', 'comments', 'comments.user'] });
     }
 
     findOne(id: number) {
-        return this.ticketRepository.findOne({ where: { id }, relations: ['createdBy', 'assignedTo'] });
+        return this.ticketRepository.findOne({ where: { id }, relations: ['createdBy', 'assignedTo', 'comments', 'comments.user'] });
     }
 
     update(id: number, ticketData: Partial<Ticket>) {
