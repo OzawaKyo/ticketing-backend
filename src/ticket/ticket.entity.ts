@@ -16,10 +16,10 @@ export class Ticket {
     @Column({ default: STATUS.OPEN })
     status: STATUS;
 
-    @ManyToOne(() => User, { nullable: false })
+    @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
     createdBy: User;
 
-    @ManyToOne(() => User, { nullable: true })
+    @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
     assignedTo: User;
 
     @CreateDateColumn()

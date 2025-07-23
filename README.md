@@ -66,3 +66,84 @@ export class UserController { ... }
 - Le rôle de l'utilisateur est stocké dans la propriété `role` de l'entité `User` et inclus dans le JWT lors de la connexion.
 - Pour tester, assurez-vous d'avoir au moins un utilisateur avec `role: 'admin'` dans la base de données.
 
+## ✅ Étape 6 : Validation, sécurité et bonnes pratiques (User, Auth, Ticket)
+
+### Utilisation des DTOs et de la validation
+- Tous les endpoints sensibles utilisent des DTOs (`CreateUserDto`, `UpdateUserDto`, `UserResponseDto`, `CreateTicketDto`, `UpdateTicketDto`, `LoginDto`) pour valider les entrées avec `class-validator`.
+- `ValidationPipe` est appliqué sur les routes pour garantir que seules les données attendues sont acceptées.
+
+### Sécurité des mots de passe
+- Les mots de passe sont **toujours hashés** (avec bcrypt) lors de la création ou la mise à jour d'un utilisateur, que ce soit via l'auth ou le CRUD admin.
+- Le champ `password` n'est **jamais retourné** dans les réponses API (utilisation de `UserResponseDto` ou exclusion manuelle).
+
+### Gestion avancée des rôles et ownership
+- Les routes `/users` sont réservées aux admins.
+- Les routes `/tickets` sont accessibles aux admins (tous les tickets) et aux users (seulement leurs propres tickets).
+- Les contrôleurs vérifient que l'utilisateur connecté est bien propriétaire du ticket pour les actions sensibles (voir, modifier, supprimer).
+- Exemple pour le module ticket :
+
+```ts
+@Post()
+@Roles('admin', 'user')
+@UsePipes(new ValidationPipe({ whitelist: true }))
+async create(@Body() createTicketDto: CreateTicketDto, @Request() req) {
+  const user = await this.userService.findOne(req.user.id);
+  if (!user) throw new ForbiddenException('Utilisateur non trouvé');
+  let assignedToUser: User | undefined = undefined;
+  if (createTicketDto.assignedTo) {
+    assignedToUser = await this.userService.findOne(createTicketDto.assignedTo) || undefined;
+  }
+  return this.ticketService.create({
+    ...createTicketDto,
+    createdBy: user,
+    assignedTo: assignedToUser,
+  });
+}
+```
+
+### Relations avancées avec TypeORM
+- Les entités `Ticket` utilisent des relations `ManyToOne` vers `User` pour `createdBy` et `assignedTo`.
+- Les requêtes incluent automatiquement les utilisateurs liés (jointures).
+
+### Exemples de DTOs
+```ts
+// CreateUserDto
+export class CreateUserDto {
+  @IsString() prenom: string;
+  @IsString() nom: string;
+  @IsEmail() email: string;
+  @IsString() @MinLength(6) password: string;
+  @IsOptional() @IsString() role?: string;
+}
+
+// UserResponseDto (jamais de password)
+export class UserResponseDto {
+  id: number;
+  prenom: string;
+  nom: string;
+  email: string;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+### AuthController avec validation
+```ts
+@Post('signup')
+@UsePipes(new ValidationPipe({ whitelist: true }))
+signup(@Body() body: CreateUserDto) {
+  return this.authService.signup(body);
+}
+
+@Post('login')
+@UsePipes(new ValidationPipe({ whitelist: true }))
+login(@Body() body: LoginDto) {
+  return this.authService.login(body.email, body.password);
+}
+```
+
+---
+
+**Le projet applique désormais les meilleures pratiques NestJS pour la sécurité, la validation et la gestion des rôles.**
+
