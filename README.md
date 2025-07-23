@@ -66,6 +66,8 @@ export class UserController { ... }
 - Le rôle de l'utilisateur est stocké dans la propriété `role` de l'entité `User` et inclus dans le JWT lors de la connexion.
 - Pour tester, assurez-vous d'avoir au moins un utilisateur avec `role: 'admin'` dans la base de données.
 
+---
+
 ## ✅ Étape 6 : Validation, sécurité et bonnes pratiques (User, Auth, Ticket)
 
 ### Utilisation des DTOs et de la validation
@@ -74,7 +76,7 @@ export class UserController { ... }
 
 ### Sécurité des mots de passe
 - Les mots de passe sont **toujours hashés** (avec bcrypt) lors de la création ou la mise à jour d'un utilisateur, que ce soit via l'auth ou le CRUD admin.
-- Le champ `password` n'est **jamais retourné** dans les réponses API (utilisation de `UserResponseDto` ou exclusion manuelle).
+- Le champ `password` n'est **jamais retourné** dans les réponses API (usage de `@Exclude` dans l'entité User et activation globale de `ClassSerializerInterceptor`).
 
 ### Gestion avancée des rôles et ownership
 - Les routes `/users` sont réservées aux admins.
@@ -104,46 +106,81 @@ async create(@Body() createTicketDto: CreateTicketDto, @Request() req) {
 ### Relations avancées avec TypeORM
 - Les entités `Ticket` utilisent des relations `ManyToOne` vers `User` pour `createdBy` et `assignedTo`.
 - Les requêtes incluent automatiquement les utilisateurs liés (jointures).
+- Les entités `Ticket` et `Comment` sont liées (un ticket a plusieurs commentaires, chaque commentaire appartient à un ticket et à un user).
 
-### Exemples de DTOs
-```ts
-// CreateUserDto
-export class CreateUserDto {
-  @IsString() prenom: string;
-  @IsString() nom: string;
-  @IsEmail() email: string;
-  @IsString() @MinLength(6) password: string;
-  @IsOptional() @IsString() role?: string;
-}
+---
 
-// UserResponseDto (jamais de password)
-export class UserResponseDto {
-  id: number;
-  prenom: string;
-  nom: string;
-  email: string;
-  role: string;
-  createdAt: Date;
-  updatedAt: Date;
+## ✅ Étape 7 : Gestion des commentaires
+
+- Module `comment` avec CRUD complet, pagination, ownership, et sécurité (guards, rôles, ownership).
+- Les commentaires sont liés à un ticket (obligatoire) et à un user (optionnel).
+- Endpoints principaux :
+  - `POST /comments?ticketId=1` : créer un commentaire sur un ticket
+  - `GET /comments/ticket/:ticketId` : lister les commentaires d'un ticket
+  - `GET /comments/user/:userId` : lister les commentaires d'un user (admin)
+  - `GET /comments` : lister tous les commentaires (admin)
+  - Pagination disponible sur les endpoints `/paginated`
+- Les commentaires sont inclus dans la réponse des tickets (`GET /tickets/:id`)
+
+---
+
+## ✅ Étape 8 : Recherche et filtrage avancé des tickets
+
+- Endpoint `GET /tickets` accepte désormais :
+  - `search` : mot-clé dans le titre ou la description
+  - `status` : statut du ticket (`open`, `in_progress`, `closed`)
+  - `assignedTo` : id de l'utilisateur assigné
+  - `createdAfter` / `createdBefore` : filtre sur la date de création (format `YYYY-MM-DD`)
+- Exemple :
+  - `GET /tickets?search=erreur&status=open&assignedTo=3&createdAfter=2024-01-01`
+
+---
+
+## ✅ Sécurité et bonnes pratiques globales
+
+- Authentification JWT sur toutes les routes sensibles
+- Guards pour la gestion des rôles et ownership
+- Validation systématique des entrées (DTOs + ValidationPipe)
+- Exclusion automatique du mot de passe dans toutes les réponses API
+- Relations et jointures TypeORM bien gérées
+
+---
+
+## 🚩 TODO / Améliorations recommandées
+
+- Ajouter des tests unitaires et e2e pour tous les modules
+- Ajouter la documentation Swagger (`@nestjs/swagger`)
+- Ajouter la pagination sur les tickets
+- Uniformiser les réponses API avec des DTOs de réponse pour tous les endpoints
+- (Optionnel) Ajouter le tri, l’export, les notifications, logs d’audit, etc.
+
+---
+
+## 📚 Exemples d'utilisation des nouveaux endpoints
+
+### Créer un commentaire sur un ticket
+```http
+POST /comments?ticketId=1
+Authorization: Bearer <token>
+Content-Type: application/json
+{
+  "content": "Super ticket !"
 }
 ```
 
-### AuthController avec validation
-```ts
-@Post('signup')
-@UsePipes(new ValidationPipe({ whitelist: true }))
-signup(@Body() body: CreateUserDto) {
-  return this.authService.signup(body);
-}
+### Filtrer les tickets
+```http
+GET /tickets?search=bug&status=open&assignedTo=2&createdAfter=2024-01-01
+Authorization: Bearer <token>
+```
 
-@Post('login')
-@UsePipes(new ValidationPipe({ whitelist: true }))
-login(@Body() body: LoginDto) {
-  return this.authService.login(body.email, body.password);
-}
+### Lister les commentaires d'un ticket
+```http
+GET /comments/ticket/1
+Authorization: Bearer <token>
 ```
 
 ---
 
-**Le projet applique désormais les meilleures pratiques NestJS pour la sécurité, la validation et la gestion des rôles.**
+**Le projet applique désormais les meilleures pratiques NestJS pour la sécurité, la validation, la gestion des rôles, la recherche et la gestion des commentaires.**
 
