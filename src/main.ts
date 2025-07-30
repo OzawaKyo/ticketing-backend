@@ -17,7 +17,7 @@ async function createDefaultAdmin(app: any){
       role: 'admin',
     });
   } catch (error) {
-    console.error('Error creating default admin:');
+    console.error('Error creating default admin');
   }
 }
 
