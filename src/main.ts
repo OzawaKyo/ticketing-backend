@@ -17,8 +17,17 @@ async function createDefaultAdmin(app: any){
       password: 'adminadmin',
       role: 'admin',
     });
+
+    console.log('Default admin created successfully');
+    console.log('You can now log in with email: admin2@admin.com and password: adminadmin');
   } catch (error) {
-    console.error('Error creating default admin');
+    console.error('Error creating default admin:', error);
+    if (error.code === '23505') { // Unique violation error code for PostgreSQL
+      console.log('Default admin already exists, skipping creation.');
+    }
+    else {
+      throw error; // Re-throw other errors
+    }
   }
 }
 
