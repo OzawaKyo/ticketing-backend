@@ -5,16 +5,28 @@ import { Reflector } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { UserService } from './user/user.service';
 import { Logger } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 
 async function createDefaultAdmin(app: any){
   try{
     const userService = app.get(UserService);
+    
+    // Vérifier si l'admin existe déjà
+    const existingAdmin = await userService.findByEmail('admin2@admin.com');
+    if (existingAdmin) {
+      console.log('Default admin already exists, skipping creation.');
+      return;
+    }
+    
+    // Hasher le mot de passe avant de créer l'admin
+    const hashedPassword = await bcrypt.hash('adminadmin', 10);
+    
     // Create a default admin user
     await userService.create({
       prenom: 'Admin',
       nom: 'ADMIN',
       email: 'admin2@admin.com',
-      password: 'adminadmin',
+      password: hashedPassword,
       role: 'admin',
     });
 
