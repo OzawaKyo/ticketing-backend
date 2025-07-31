@@ -25,7 +25,7 @@ async function createDefaultAdmin(app: any){
     await userService.create({
       prenom: 'Admin',
       nom: 'ADMIN',
-      email: 'admin2@admin.com',
+      email: 'admin@admin.com',
       password: hashedPassword,
       role: 'admin',
     });
