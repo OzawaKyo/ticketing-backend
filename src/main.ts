@@ -49,15 +49,12 @@ async function bootstrap() {
   
   // Configuration CORS
   app.enableCors({
-    origin: process.env.NODE_ENV === 'production' 
-      ? [
-          'https://your-frontend-domain.com', // Remplacez par votre domaine de production
-        ]
-      : [
-          'http://localhost:4200',  // Frontend Angular en développement
-          'http://localhost:3000',  // React ou autre
-          'http://localhost:8080',  // Vue ou autre
-        ],
+    origin: [
+      'http://localhost:4200',  // Frontend Angular en développement (toujours autorisé)
+      'http://localhost:3000',  // React ou autre
+      'http://localhost:8080',  // Vue ou autre
+      'https://your-frontend-domain.com', // Remplacez par votre domaine de production
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
