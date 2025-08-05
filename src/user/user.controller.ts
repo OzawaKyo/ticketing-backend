@@ -32,7 +32,11 @@ export class UserController {
 
   @Get(':id')
   async findOne(@Param('id') id: string): Promise<UserResponseDto | undefined> {
-    const user = await this.userService.findOne(Number(id));
+    const numericId = Number(id);
+    if (isNaN(numericId)) {
+      return undefined; // ou throw new BadRequestException('Invalid ID format');
+    }
+    const user = await this.userService.findOne(numericId);
     if (!user) return undefined;
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...rest } = user;
