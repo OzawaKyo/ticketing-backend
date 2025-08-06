@@ -69,14 +69,11 @@ export class TicketController {
     }
 
     @Put(':id')
-    @Roles('admin', 'user')
+    @Roles('admin')
     @UsePipes(new ValidationPipe({ whitelist: true }))
     async update(@Param('id') id: string, @Body() updateTicketDto: UpdateTicketDto, @Request() req) {
         const ticket = await this.ticketService.findOne(Number(id));
         if (!ticket) throw new ForbiddenException('Ticket non trouvé');
-        if (req.user.role !== 'admin' && ticket.createdBy.id !== req.user.id) {
-            throw new ForbiddenException('Vous ne pouvez modifier que vos propres tickets.');
-        }
         let assignedToUser: User | undefined = ticket.assignedTo;
         if (updateTicketDto.assignedTo) {
             assignedToUser = await this.userService.findOne(updateTicketDto.assignedTo) || undefined;
