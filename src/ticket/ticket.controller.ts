@@ -62,7 +62,7 @@ export class TicketController {
     async findOne(@Param('id') id: string, @Request() req) {
         const ticket = await this.ticketService.findOne(Number(id));
         if (!ticket) throw new ForbiddenException('Ticket non trouvé');
-        if (req.user.role !== 'admin' && ticket.createdBy !== req.user.id) {
+        if (req.user.role !== 'admin' && ticket.createdBy.id !== req.user.id) {
             throw new ForbiddenException('Vous ne pouvez voir que vos propres tickets.');
         }
         return ticket;
@@ -92,7 +92,7 @@ export class TicketController {
     async remove(@Param('id') id: string, @Request() req) {
         const ticket = await this.ticketService.findOne(Number(id));
         if (!ticket) throw new ForbiddenException('Ticket non trouvé');
-        if (req.user.role !== 'admin' && ticket.createdBy !== req.user.id) {
+        if (req.user.role !== 'admin' && ticket.createdBy.id !== req.user.id) {
             throw new ForbiddenException('Vous ne pouvez supprimer que vos propres tickets.');
         }
         return this.ticketService.remove(Number(id));
