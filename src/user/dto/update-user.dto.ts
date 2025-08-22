@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, MinLength } from 'class-validator';
+import { IsString, IsEmail, IsOptional, MinLength, IsIn } from 'class-validator';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -20,5 +20,8 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
+  @IsIn(['user', 'admin'], {
+    message: 'Le rôle doit être soit "user" soit "admin"'
+  })
   role?: string;
 } 

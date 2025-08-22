@@ -34,4 +34,14 @@ export class UserService {
   update(id: number, userData: Partial<User>) {
     return this.userRepository.update(id, userData);
   }
+
+  async changeRole(id: number, role: string): Promise<User | null> {
+    const user = await this.findOne(id);
+    if (!user) {
+      return null;
+    }
+    
+    await this.userRepository.update(id, { role });
+    return this.findOne(id);
+  }
 }

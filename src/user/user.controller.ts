@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, UsePipes, ValidationPipe, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, UsePipes, ValidationPipe, Put, Patch, NotFoundException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -6,6 +6,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { ChangeRoleDto } from './dto/change-role.dto';
 import * as bcrypt from 'bcrypt';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -60,5 +61,23 @@ export class UserController {
   @Delete(':id')
   async remove(@Param('id') id: string) {
     return this.userService.remove(Number(id));
+  }
+
+  @Patch(':id/role')
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  async changeRole(@Param('id') id: string, @Body() changeRoleDto: ChangeRoleDto): Promise<UserResponseDto> {
+    const numericId = Number(id);
+    if (isNaN(numericId)) {
+      throw new NotFoundException('ID utilisateur invalide');
+    }
+
+    const user = await this.userService.changeRole(numericId, changeRoleDto.role);
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { password, ...rest } = user;
+    return rest;
   }
 }
