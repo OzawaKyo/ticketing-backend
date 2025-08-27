@@ -9,4 +9,13 @@ export class AppController {
   getHello(): string {
     return this.appService.getHello();
   }
+
+  @Get('health')
+  healthCheck() {
+    return {
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      message: 'Backend is running and CORS is configured'
+    };
+  }
 }

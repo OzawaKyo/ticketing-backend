@@ -48,16 +48,39 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   
   // Configuration CORS
+  const allowedOrigins = [
+    // Développement local
+    'http://localhost:4200',  // Angular
+    // Production Firebase
+    'https://next-ti-6294f.web.app',  // Votre app Angular sur Firebase
+    'https://next-ti-6294f.firebaseapp.com',  // URL alternative Firebase
+    process.env.FRONTEND_URL,
+  ].filter(Boolean); // Retire les valeurs undefined/null
+
   app.enableCors({
-    origin: [
-      'http://localhost:4200',  // Frontend Angular en développement (toujours autorisé)
-      'http://localhost:3000',  // React ou autre
-      'http://localhost:8080',  // Vue ou autre
-      'https://your-frontend-domain.com', // Remplacez par votre domaine de production
-    ],
+    origin: (origin, callback) => {
+      // Autorise les requêtes sans origin (ex: mobile apps, Postman)
+      if (!origin) return callback(null, true);
+      
+      // Vérifie les origines explicites
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // Vérifie les patterns Firebase
+      if (origin.match(/^https:\/\/.*\.web\.app$/) || 
+          origin.match(/^https:\/\/.*\.firebaseapp\.com$/)) {
+        return callback(null, true);
+      }
+      
+      // Rejette les autres origines
+      callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   }); 
   // Swagger setup
   const config = new DocumentBuilder()
